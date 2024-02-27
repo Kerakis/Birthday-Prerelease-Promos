@@ -86,25 +86,33 @@ for card in data:
             if abs((release_date - birth_date).days) <= 10:
                 filtered_data.append(card)
 
+# Sort the filtered data by how close the release date (ignoring the year) is to the user's birth date
+filtered_data.sort(key=lambda card: abs((datetime(datetime.now().year, birth_month, birth_day) - (datetime(datetime.now().year, datetime.strptime(card["released_at"], "%Y-%m-%d").month, datetime.strptime(card["released_at"], "%Y-%m-%d").day) - timedelta(days=7))).days))
+
 print(f"Found {len(filtered_data)} matching cards.")
 
 print("Writing output to HTML file...")
 # Output the images of the filtered cards to an HTML file
 with open("output.html", "w") as f:
-    f.write("<html>\n<body style='background-color: #333333;'>\n<div style='display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));'>\n")
-    for card in filtered_data:
-        # Check if the card has an image
-        image_uri = None
-        if "image_uris" in card and "border_crop" in card["image_uris"]:
-            image_uri = card["image_uris"]["border_crop"]
-        elif "card_faces" in card and "image_uris" in card["card_faces"][0] and "border_crop" in card["card_faces"][0]["image_uris"]:
-            image_uri = card["card_faces"][0]["image_uris"]["border_crop"]
+    f.write("<html>\n<body style='background-color: #333333;'>\n")
+    if filtered_data:
+        f.write("<div style='display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));'>\n")
+        for card in filtered_data:
+            # Check if the card has an image
+            image_uri = None
+            if "image_uris" in card and "border_crop" in card["image_uris"]:
+                image_uri = card["image_uris"]["border_crop"]
+            elif "card_faces" in card and "image_uris" in card["card_faces"][0] and "border_crop" in card["card_faces"][0]["image_uris"]:
+                image_uri = card["card_faces"][0]["image_uris"]["border_crop"]
 
-        if image_uri:
-            f.write(f"<div style='border: 1px solid #000; margin: 10px; padding: 10px;'>\n")
-            f.write(f"<a href='{card['scryfall_uri']}' target='_blank'>\n")
-            f.write(f"<img src='{image_uri}' alt='{card['name']}' style='width: 100%;'>\n")
-            f.write(f"</a>\n")
-            f.write(f"</div>\n")
-    f.write("</div>\n</body>\n</html>")
+            if image_uri:
+                f.write(f"<div style='border: 1px solid #000; margin: 10px; padding: 10px;'>\n")
+                f.write(f"<a href='{card['scryfall_uri']}' target='_blank'>\n")
+                f.write(f"<img src='{image_uri}' alt='{card['name']}' style='width: 100%;'>\n")
+                f.write(f"</a>\n")
+                f.write(f"</div>\n")
+        f.write("</div>\n")
+    else:
+        f.write("<h1 style='color: white;'>Womp womp! There aren't any prerelease promos with your birthday on them. :(</h1>\n")
+    f.write("</body>\n</html>")
 print("Output written to output.html.")
